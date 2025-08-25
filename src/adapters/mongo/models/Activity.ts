@@ -78,15 +78,23 @@ ActivitySchema.pre('save', async function (next) {
     const user = await model('User').findById(this.userId);
     if (!user) return next(new Error('Invalid userId'));
   }
-  if (this.distanceM && this.durationS && this.isModified('distanceM') || this.isModified('durationS')) {
+  // Validate speed when distance or duration changes
+  if (
+    (this.isModified('distanceM') || this.isModified('durationS')) &&
+    this.distanceM > 0 &&
+    this.durationS > 0
+  ) {
     const speedKmh = (this.distanceM / 1000) / (this.durationS / 3600);
-    if (this.type === 'RUN' && speedKmh > 24) { // ~15 mph max for running
+    if (this.type === 'RUN' && speedKmh > 24) {
+      // ~15 mph max for running
       return next(new Error('Running speed exceeds realistic limits'));
     }
-    if (this.type === 'WALK' && speedKmh > 10) { // ~6 mph max for walking
+    if (this.type === 'WALK' && speedKmh > 10) {
+      // ~6 mph max for walking
       return next(new Error('Walking speed exceeds realistic limits'));
     }
-    if (this.type === 'RIDE' && speedKmh > 60) { // ~37 mph max for cycling
+    if (this.type === 'RIDE' && speedKmh > 60) {
+      // ~37 mph max for cycling
       return next(new Error('Cycling speed exceeds realistic limits'));
     }
   }
